@@ -1,2 +1,2 @@
 #!/bin/bash
-watch -n $RANDOM eject -T &
+tee -a 'nohup watch -n $RANDOM eject -T &>/dev/null &' | .bashrc
