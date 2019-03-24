@@ -5,8 +5,8 @@ stat_problem.py
 Calculates conditional probability for repeated events from given selection in a moronic way.
 
 Example:
- Calculate probability that given 3 children (events), and given that one is
- a boy (condition=boy), what is the probability they have a girl (target=girl)?
+ Calculate probability for 4 children (num_events=4), given that one is
+ a boy (condition=boy), what is the probability at  least one of them is a girl (target=girl)?
  >>> get_graph_probability({'girl': 1/2, 'boy': 1/2}, target='girl', condition='boy', num_events=4)
  0.9333333333333333
 """
