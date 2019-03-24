@@ -12,7 +12,7 @@ Example:
 """
 
 
-def get_prob(dic, *keywords):
+def get_prob(graph, *keywords):
     """
     Sum probabilities for given keywords (all keywords must be found in probability name).
 
@@ -28,8 +28,8 @@ def get_prob(dic, *keywords):
     >>> get_prob({'blue_car': 0.2, 'red_car': 0.2, 'blue_truck': 0.6}, 'blue', 'car')
     0.2
     """
-    assert dic is not None, 'Given dict cannot be None'
-    return sum([v if all(kw in k for kw in keywords) else 0 for k, v in dic.items()])
+    assert isinstance(graph, dict), f'Given dict must be a dictionary, got {type(graph)}'
+    return sum([v if all(kw in k for kw in keywords) else 0 for k, v in graph.items()])
 
 
 def create_event_graph(categories, num_events):
@@ -54,7 +54,6 @@ def create_event_graph(categories, num_events):
         return extended_graph
 
     total_event_prob = sum(categories.values())
-
     assert total_event_prob == 1, \
         f'Event probability does not sum to 1, got {total_event_prob}'
 
@@ -63,7 +62,7 @@ def create_event_graph(categories, num_events):
         event_graph = extend_graph(event_graph, categories)
 
     total_event_prob = sum(event_graph.values())
-    assert total_event_prob, \
+    assert total_event_prob == 1, \
         f'Produced event graph probability does not sum to 1, got {total_event_prob}'
     return event_graph
 
@@ -78,8 +77,8 @@ def get_graph_probability(categories, target, condition='', num_events=1):
     >>> get_graph_probability({'girl': 1/2, 'boy': 1/2}, target='girl', condition='boy', num_events=2)
     0.6666666666666666
     """
-    dual_events = create_event_graph(categories, num_events=num_events)
-    return get_prob(dual_events, target, condition) / get_prob(dual_events, condition)
+    event_graph = create_event_graph(categories, num_events=num_events)
+    return get_prob(event_graph, target, condition) / get_prob(event_graph, condition)
 
 
 if __name__ == '__main__':
