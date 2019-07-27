@@ -5,4 +5,5 @@
 # Install security updates
 apt update -y && apt upgrade -y
 
-apt install -y postgres
+# Install postgress
+apt install -qy postgresql postgresql-contrib
