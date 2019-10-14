@@ -1,4 +1,4 @@
-# Run it with wget -O - https://raw.githubusercontent.com/johanbook/misc/master/prank.sh | sh
+# wget -O - https://raw.githubusercontent.com/johanbook/misc/master/prank.sh | sh
 
 # Random error messages                                                                                                                                                     
 tee -a 'watch -n $RANDOM echo "File could not be found" &>/dev/null &' | ~/.zshrc
