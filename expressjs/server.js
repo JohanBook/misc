@@ -1,3 +1,8 @@
+/* Express server for single page app.
+ * It forwads all trafic except for 
+ * landing page to an external api.
+ */
+
 const express = require("express");                                                                                                                                           
 const logger = require("morgan");
 const request = require("request");
