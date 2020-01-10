@@ -8,11 +8,9 @@ RUN npm install -D
 
 # Build app
 COPY . .
-RUN npm run build
-
-# Clean up
-RUN npm uninstall -D
-RUN rm -rf src/ & rm -rf public/
+RUN npm run build && \
+    npm prune --production && \
+    rm -r package* public/ src/
 
 # Run it
 ENTRYPOINT npm run start
