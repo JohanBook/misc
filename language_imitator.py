@@ -8,6 +8,35 @@ import numpy.random as random
 import string
 
 
+def normalize(dic):
+    """
+    Normalize dictionary values
+
+    >>> normalize({'a': 1, 'b': 1})
+    {'a': 0.5, 'b': 0.5}
+    """
+    assert isinstance(dic, dict), \
+        f'Expected dict but got {type(dic)}'
+    dic_sum = sum(dic.values())
+    return {k: v/dic_sum for k, v in dic.items()}
+
+
+def clean(s):
+    """Convert to lowercase and remove characters
+    not in alphabet
+
+    >>> clean('A!2bcD#EFg')
+    'abcdefg'
+    """
+    assert isinstance(s, str), \
+        f'Expected string but got {type(s)}'
+    clean_string = ''
+    for char in s.lower():
+        if char in string.ascii_lowercase:
+            clean_string += char
+    return clean_string
+
+
 class LanguageGenerator:
     """Imitate a language from a given sample
 
@@ -64,6 +93,9 @@ class LanguageGenerator:
         {'a': {'b': 2}, 'b': {'c': 1, None: 1}, 'c': {'a': 1}}
         """
         word = clean(word)
+        if len(word) == 0:
+            return
+
         for char in word:
             if char not in self.map:
                 self.map[char] = self.Character()
@@ -93,30 +125,20 @@ class LanguageGenerator:
         return {key: self.map[key].to_string() for key in self.map.keys()}
 
 
-def normalize(dic):
-    """
-    Normalize dictionary values
+if __name__ == '__main__':
+    import argparse
 
-    >>> normalize({'a': 1, 'b': 1})
-    {'a': 0.5, 'b': 0.5}
-    """
-    assert isinstance(dic, dict), \
-        f'Expected dict but got {type(dic)}'
-    dic_sum = sum(dic.values())
-    return {k: v/dic_sum for k, v in dic.items()}
+    parser = argparse.ArgumentParser(
+        description="Imitate a language",
+        add_help=True
+    )
+    parser.add_argument('path', type=str, help="path to file with training data")
+    parser.add_argument('-s', "--sentences", type=int, default=1, help="number of sentences")
+    args = parser.parse_args()
 
+    training_data = open(args.path, "r").read()
+    generator = LanguageGenerator(training_data)
+    sentences = [generator.generate_sentence() for _ in range(args.sentences)]
+    text = " ".join(sentences)
 
-def clean(s):
-    """Convert to lowercase and remove characters 
-    not in alphabet
-
-    >>> clean('A!2bcD#EFg')
-    'abcdefg'
-    """
-    assert isinstance(s, str), \
-        f'Expected string but got {type(s)}'
-    clean_string = ''
-    for char in s.lower():
-        if char in string.ascii_lowercase:
-            clean_string += char
-    return clean_string
+    print(text)
