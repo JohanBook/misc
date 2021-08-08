@@ -1,12 +1,7 @@
 """
 Print notebook python code to stdout
 """
-import argparse
 import yaml
-
-parser = argparse.ArgumentParser()
-parser.add_argument('path', type=str)
-args = parser.parse_args()
 
 
 def read_yaml(path):
@@ -17,11 +12,28 @@ def read_yaml(path):
             raise error
 
 
+def cells_to_script(cells):
+    scripts = []
+    for cell in cells:
+        if cell['cell_type'] != 'code':
+            continue;
+        string = ''
+        for line in cell['source']:
+            string += line
+        scripts.append(string)
+    return "\n".join(scripts)
+
+
 if __name__ == '__main__':
-    data = read_yaml(args.path)['cells']
-    for d in data:
-        if d['cell_type'] == 'code':
-            string = ''
-            for line in d['source']:
-                string += line
-            print(string, '\n')
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Extract Python scripts from a Jupyter notebook",
+        add_help=True
+    )
+    parser.add_argument('path', type=str, help="path to notebook file")
+    args = parser.parse_args()
+
+    cells = read_yaml(args.path)['cells']
+    script = cells_to_script(cells);
+    print(script)
