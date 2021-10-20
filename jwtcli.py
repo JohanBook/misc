@@ -1,0 +1,117 @@
+"""
+CLI for inspecting JWT tokens.
+Requires `pyjwt` to be installed.
+"""
+import base64
+import json
+import jwt
+import re
+
+
+def is_jwt(token):
+    return re.search("(^[\w-]*\.[\w-]*\.[\w-]*$)", token)
+
+
+def get_jwt(token_or_filepath):
+    if is_jwt(token_or_filepath):
+        return token_or_filepath
+    try:
+        token = open(token_or_filepath, "r").read()
+        if is_jwt(token):
+            return token.replace("\n", "")
+        raise Exception(f"Is'{token}' is not a valid JWT")
+    except:
+        raise Exception(f"Unable to open file '{token_or_filepath}'")
+
+
+def decode_base64(data):
+    # Add extra padding to avoid `Incorrect padding` error
+    data = data.lstrip() + "======"
+    return base64.b64decode(data)
+
+
+def parse_token(token):
+    [header, body, _] = token.split(".")
+    header = json.loads(decode_base64(header))
+    body = json.loads(decode_base64(body))
+    return [header, body]
+
+
+def check_signature(token, secret, algorithm):
+    try:
+        jwt.decode(token, secret, algorithms=[algorithm])
+        return True
+    except jwt.DecodeError:
+        return False
+    except jwt.InvalidTokenError:
+        return False
+
+
+def check_signatures(token, signatures, algorithm):
+    for signature in signatures:
+        success = check_signature(token, signature, algorithm)
+        print(f"x '{signature}'")
+        if success:
+            print(f"MATCH '{signature}'")
+            return signature
+
+
+def crack(args):
+    print(f"Trying to crack {args.token}")
+    token = get_jwt(args.token)
+    alg = parse_token(token)[0]["alg"]
+    signatures = open(args.signatures, "r").read().split("\n")
+    check_signatures(args.token, signatures, alg)
+
+
+def inspect(args):
+    token = get_jwt(args.token)
+    [header, body, signature] = parse_token(token)
+    print(f"Inspecting {args.token}")
+    print("Header:\n", json.dumps(header, indent=4))
+    print("Body:\n", json.dumps(body, indent=4))
+
+
+def create_unsigned(args):
+    token = jwt.encode({"id": 1}, "", algorithm="none")
+    print(token)
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Various JWT utils", add_help=True)
+    subparsers = parser.add_subparsers()
+
+    parser_unsigned = subparsers.add_parser(
+        "create-unsigned", description="Create a an unsigned JWT"
+    )
+    parser_unsigned.set_defaults(func=create_unsigned)
+
+    parser_inspect = subparsers.add_parser(
+        "inspect", description="Print token header and body"
+    )
+    parser_inspect.add_argument(
+        "token", type=str, help="token or path to file containing token"
+    )
+    parser_inspect.set_defaults(func=inspect)
+
+    parser_crack = subparsers.add_parser(
+        "crack", description="Attempt to find token secret using a brute force attempt"
+    )
+    parser_crack.add_argument(
+        "token", type=str, help="token or path to file containing token"
+    )
+    parser_crack.add_argument(
+        "--signatures",
+        type=str,
+        help="path to file containing signatures that should be checked. Each line is interpreted is its own signature",
+        required=True,
+    )
+    parser_crack.set_defaults(func=crack)
+
+    args = parser.parse_args()
+    if "func" in args:
+        args.func(args)
+    else:
+        print("Run with -h to see available commands")
