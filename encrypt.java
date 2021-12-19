@@ -14,11 +14,9 @@ public class Crypt {
         boolean decrypt = Boolean.parseBoolean(args[1]);
 
         Scanner scanner = new Scanner(System.in);
-
         while (scanner.hasNext()) {
             System.out.println(crypt(scanner.nextLine(), key, decrypt));
         }
-
         scanner.close();
     }
 
