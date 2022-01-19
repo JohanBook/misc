@@ -1,27 +1,32 @@
 """
 CLI for inspecting JWT tokens.
-Requires `pyjwt` to be installed.
+
+Some commands requires `pyjwt` to be installed.
 """
 import base64
 import json
-import jwt
 import re
+
+JWT_REGEXP = re.compile("(^[\w-]*\.[\w-]*\.[\w-]*$)")
+
+
+def read_file(filepath):
+    try:
+        content = open(filepath, "r").read()
+        return content.replace("\n", "")
+    except:
+        raise Exception(f"Unable to open file '{filepath}'")
 
 
 def is_jwt(token):
-    return re.search("(^[\w-]*\.[\w-]*\.[\w-]*$)", token)
+    return JWT_REGEXP.search(token)
 
 
-def get_jwt(token_or_filepath):
-    if is_jwt(token_or_filepath):
-        return token_or_filepath
-    try:
-        token = open(token_or_filepath, "r").read()
-        if is_jwt(token):
-            return token.replace("\n", "")
+def get_jwt_from_file(filepath):
+    token = read_file(filepath)
+    if not is_jwt(token):
         raise Exception(f"Is'{token}' is not a valid JWT")
-    except:
-        raise Exception(f"Unable to open file '{token_or_filepath}'")
+    return token
 
 
 def decode_base64(data):
@@ -38,6 +43,8 @@ def parse_token(token):
 
 
 def check_signature(token, secret, algorithm):
+    import jwt
+
     try:
         jwt.decode(token, secret, algorithms=[algorithm])
         return True
@@ -56,16 +63,51 @@ def check_signatures(token, signatures, algorithm):
             return signature
 
 
+def analyze(args):
+    token = read_file(args.token)
+    parts = token.split(".")
+    print(f"FILE: {args.token}")
+    print(f"PARTS: {len(parts)}")
+
+    for index in range(len(parts)):
+        part = parts[index]
+        print(f"\nPART {index+1}/{len(parts)}")
+        print(f"LENGTH: {len(part)}")
+        try:
+            decoded = decode_base64(part)
+            print("-> Part was Base64 decoded")
+        except:
+            print("-> Failed to Base64 decode part")
+            print(part)
+            continue
+
+        try:
+            body = json.loads(decoded)
+            print("-> Content is valid JSON")
+            print(body)
+            continue
+        except:
+            print("-> Content could not be parsed as JSON")
+
+        try:
+            body = decoded.decode("ascii")
+            print("-> Could be ASCII decoded")
+            print(body)
+        except:
+            print("-> Could not be ASCII decoded")
+            print(decoded)
+
+
 def crack(args):
     print(f"Trying to crack {args.token}")
-    token = get_jwt(args.token)
+    token = get_jwt_from_file(args.token)
     alg = parse_token(token)[0]["alg"]
     signatures = open(args.signatures, "r").read().split("\n")
     check_signatures(args.token, signatures, alg)
 
 
 def inspect(args):
-    token = get_jwt(args.token)
+    token = get_jwt_from_file(args.token)
     [header, body, signature] = parse_token(token)
     print(f"Inspecting {args.token}")
     print("Header:\n", json.dumps(header, indent=4))
@@ -73,6 +115,8 @@ def inspect(args):
 
 
 def create_unsigned(args):
+    import jwt
+
     token = jwt.encode({"id": 1}, "", algorithm="none")
     print(token)
 
@@ -88,20 +132,23 @@ if __name__ == "__main__":
     )
     parser_unsigned.set_defaults(func=create_unsigned)
 
+    parser_analyze = subparsers.add_parser(
+        "analyze", description="Analyze token for parts, encodings, etc."
+    )
+    parser_analyze.add_argument("token", type=str, help="path to file containing token")
+    parser_analyze.set_defaults(func=analyze)
+
     parser_inspect = subparsers.add_parser(
-        "inspect", description="Print token header and body"
+        "inspect",
+        description="Print token header and body. If unsure if token is a JWT, use analyze command instead.",
     )
-    parser_inspect.add_argument(
-        "token", type=str, help="token or path to file containing token"
-    )
+    parser_inspect.add_argument("token", type=str, help="path to file containing token")
     parser_inspect.set_defaults(func=inspect)
 
     parser_crack = subparsers.add_parser(
         "crack", description="Attempt to find token secret using a brute force attempt"
     )
-    parser_crack.add_argument(
-        "token", type=str, help="token or path to file containing token"
-    )
+    parser_crack.add_argument("token", type=str, help="to file containing token")
     parser_crack.add_argument(
         "--signatures",
         type=str,
