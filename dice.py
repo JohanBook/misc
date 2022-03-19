@@ -7,7 +7,7 @@ RANDOM = Random()
 randint = RANDOM.randint
 
 
-def _dice(dice, advantage, disadvantage):
+def _roll_dice(dice, advantage, disadvantage):
     num, dice = dice.split("d")
     num, dice = int(num), int(dice)
 
@@ -28,8 +28,8 @@ def roll_dices(dices, advantage=False, disadvantage=False):
     """
     if advantage and disadvantage:
         raise ValueError("Cannot use advantage and disadvantage simultaneously")
-    vals = [_dice(dice, advantage, disadvantage) for dice in dices]
-    return sum(vals)
+    values = [_roll_dice(dice, advantage, disadvantage) for dice in dices]
+    return sum(values)
 
 
 if __name__ == "__main__":
