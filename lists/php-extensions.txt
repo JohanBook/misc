@@ -1,0 +1,12 @@
+.php
+.php3
+.php4
+.php5
+.php7
+.phps
+.php-s
+.pht
+.phtm
+.phtml
+.phar
+.jpeg.php
